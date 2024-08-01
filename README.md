@@ -29,4 +29,12 @@ after running the above command run the final command to activate it <br>
 
 <hr>
 
+# Added features :-
+
+- <b>Added task reminder.</b> <br>
+- <b>Added schedule meeting.</b> <br>
+- <b>Optimized code and reduces latency.</b>
+
+<hr>
+
 <b>More features commming soon, stay tuned</b>
