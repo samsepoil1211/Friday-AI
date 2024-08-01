@@ -11,7 +11,7 @@ QUERY_FILE = 'query_record.json'
 INTERNAL_SEARCH_FILE = 'internal_search.json'
 
 # WeatherAPI configuration
-WEATHERAPI_API_KEY = '63dd7ebad1xxxxxxxxxxxxxxxx' //Your actual weatherAPI key
+WEATHERAPI_API_KEY = '63dd7ebad1xxxxxxxxxxxxxxxx' #Your actual weatherAPI key
 
 def listen_to_speech(timeout=5):
     """Listen to speech and return the recognized text."""
