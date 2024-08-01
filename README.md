@@ -14,7 +14,7 @@ after running the above command run the final command to activate it <br>
 
 
 # Note
-<b>Use your own weatherAPI key, if you want to use the weather feature. Don't modify the code or elase it wont work. Share with proper credit.</b>
+<b>Use your own weatherAPI key, if you want to use the weather feature. Don't modify the code or else it wont work. Share with proper credit.</b>
 
 <hr>
 
