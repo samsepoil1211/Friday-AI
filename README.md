@@ -22,9 +22,9 @@ after running the above command run the final command to activate it <br>
 
 <b>Commands you can use are listed below :-</b> <br>
 
-- date = to list the current date. <br>
-- time = to display the current time.<br>
-- introduce yourself = to display the introduction of the bot. <br>
-- weather (your city) = displays your current weather.
+- <b>date = to list the current date.</b> <br>
+- <b>time = to display the current time.</b><br>
+- <b>introduce yourself = to display the introduction of the bot.</b> <br>
+- <b>weather (your city) = displays your current weather.</b>
 
 <hr>
