@@ -3,15 +3,33 @@ import speech_recognition as sr
 import webbrowser
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
+import sched
+import time
+import threading
 
-# Paths to the files where queries are stored
+# Paths to the files where queries and tasks are stored
 QUERY_FILE = 'query_record.json'
 INTERNAL_SEARCH_FILE = 'internal_search.json'
+REMINDER_FILE = 'reminders.json'
+MEETING_FILE = 'meetings.json'
 
 # WeatherAPI configuration
-WEATHERAPI_API_KEY = '63dd7ebad1xxxxxxxxxxxxxxxx' #Your actual weatherAPI key
+WEATHERAPI_API_KEY = '63dd7ebadxxxxxxxxxxxxxxx' #Replace it with your weatherAPI key
+
+# Initialize text-to-speech engine
+engine = pyttsx3.init()
+engine.setProperty('rate', 160)  # Speed of speech
+engine.setProperty('volume', 1)  # Volume level
+
+def speak(text):
+    """Speak the given text using pyttsx3."""
+    try:
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print(f"An error occurred while speaking: {e}")
 
 def listen_to_speech(timeout=5):
     """Listen to speech and return the recognized text."""
@@ -36,22 +54,6 @@ def listen_to_speech(timeout=5):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
             return "An unexpected error occurred."
-
-def speak(text):
-    """Speak the given text using pyttsx3."""
-    try:
-        engine = pyttsx3.init()
-        engine.setProperty('rate', 180)  # Speed of speech
-        voices = engine.getProperty('voices')
-        # Set a female voice, if available
-        for voice in voices:
-            if 'female' in voice.name.lower():
-                engine.setProperty('voice', voice.id)
-                break
-        engine.say(text)
-        engine.runAndWait()
-    except Exception as e:
-        print(f"An error occurred while speaking: {e}")
 
 def get_current_time():
     """Return the current time as a string."""
@@ -103,9 +105,9 @@ def search_web(query):
         response = listen_to_speech(timeout=10)
         if "yes" in response.lower():
             speak("Clicking the first link now.")
-            return f"Opened search results for '{query_text}'. Please click on the first link manually."
+            return f"Opened search results for '{query_text}'. Please click the first link manually."
         else:
-            return "Ok sir, I will not click the link unless you say so."
+            return "Okay, I will not click the link unless you ask me to."
     except Exception as e:
         print(f"An error occurred while searching the web: {e}")
         return "An error occurred while searching the web."
@@ -211,56 +213,145 @@ def introduce_myself():
 
 def ping():
     """Simulate a ping response."""
-    import time
     import random
     latency = random.randint(10, 100)  # Simulated latency in milliseconds
-    response = f"Sir, this is my delay latency of {latency} milliseconds."
+    response = f"Sir, my current delay latency is {latency} milliseconds."
     return response
 
 def help_function():
     """Provide help information."""
     return (
         "Here are the commands you can use:\n"
-        "- 'search <query>': To search the web for the specified query.\n"
-        "- 'weather <city>': To get the current weather for the specified city.\n"
+        "- 'search <query>': To perform a web search and suggest results.\n"
+        "- 'weather <city>': To get the current weather information for a given city.\n"
         "- 'time': To get the current time.\n"
         "- 'date': To get the current date.\n"
         "- 'ping': To simulate a ping response and check latency.\n"
         "- 'help': To get this help information.\n"
         "- 'internal search <query>': To perform an internal search and get results.\n"
         "- 'read internal search results': To read out all the results from internal searches.\n"
-        "- 'introduce yourself': To hear an introduction from me."
+        "- 'introduce yourself': To hear an introduction from me.\n"
+        "- 'set reminder <task> at <time>': To set a reminder for a specific task at a given time.\n"
+        "- 'schedule meeting <description> at <datetime>': To schedule a meeting with a description and time."
     )
+
+# Scheduler for handling reminders and meetings
+scheduler = sched.scheduler(time.time, time.sleep)
+
+def add_reminder(task, time_str):
+    """Add a reminder to be triggered at a given time of day."""
+    try:
+        reminder_time = datetime.strptime(time_str, "%H:%M").time()
+        now = datetime.now()
+        reminder_datetime = datetime.combine(now.date(), reminder_time)
+        if reminder_datetime < now:
+            reminder_datetime += timedelta(days=1)  # Schedule for the next day if time is already passed today
+        
+        time_in_seconds = (reminder_datetime - now).total_seconds()
+        scheduler.enter(time_in_seconds, 1, lambda: speak(f"Reminder: {task}"))
+        
+        reminders = load_json(REMINDER_FILE)
+        reminders.append({
+            'timestamp': get_current_time(),
+            'task': task,
+            'trigger_time': reminder_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        })
+        save_json(REMINDER_FILE, reminders)
+        return f"Reminder set for '{task}' at {time_str}"
+    except ValueError as e:
+        return f"Error in setting reminder: {e}"
+
+def add_meeting(description, date_time_str):
+    """Add a meeting with a description and scheduled time."""
+    try:
+        meeting_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
+        time_in_seconds = (meeting_time - datetime.now()).total_seconds()
+        
+        if time_in_seconds < 0:
+            return "The meeting time is in the past. Please provide a future time."
+        
+        scheduler.enter(time_in_seconds, 1, lambda: speak(f"Meeting Reminder: {description}"))
+        
+        meetings = load_json(MEETING_FILE)
+        meetings.append({
+            'timestamp': get_current_time(),
+            'description': description,
+            'scheduled_time': date_time_str
+        })
+        save_json(MEETING_FILE, meetings)
+        return f"Meeting scheduled for '{description}' at {date_time_str}"
+    except ValueError as e:
+        return f"Error in scheduling meeting: {e}"
+
+def load_json(file_path):
+    """Load JSON data from a file."""
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    return []
+
+def save_json(file_path, data):
+    """Save JSON data to a file."""
+    try:
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
+    except Exception as e:
+        print(f"An error occurred while saving the file: {e}")
 
 def execute_command(command):
     """Execute the appropriate command based on user input."""
-    if "search" in command.lower():
+    command = command.lower()
+    if "search" in command:
         return search_web(command)
-    elif "weather" in command.lower():
+    elif "weather" in command:
         city = command.replace("weather", "", 1).strip()
         return get_weather(city)
-    elif "time" in command.lower():
+    elif "time" in command:
         return get_current_time()
-    elif "date" in command.lower():
+    elif "date" in command:
         return get_current_date()
-    elif "ping" in command.lower():
+    elif "ping" in command:
         return ping()
-    elif "help" in command.lower():
+    elif "help" in command:
         return help_function()
-    elif "internal search" in command.lower():
+    elif "internal search" in command:
         query = command.replace("internal search", "", 1).strip()
         return perform_internal_search(query)
-    elif "read internal search results" in command.lower():
+    elif "read internal search results" in command:
         return read_internal_search_results()
-    elif "introduce yourself" in command.lower():
+    elif "introduce yourself" in command:
         return introduce_myself()
+    elif "set reminder" in command:
+        parts = command.replace("set reminder", "", 1).strip().split(" at ")
+        if len(parts) == 2:
+            task = parts[0].strip()
+            time_str = parts[1].strip()
+            return add_reminder(task, time_str)
+        else:
+            return "Please provide a task and a time in the format 'HH:MM'."
+    elif "schedule meeting" in command:
+        parts = command.replace("schedule meeting", "", 1).strip().split(" at ")
+        if len(parts) == 2:
+            description = parts[0].strip()
+            date_time_str = parts[1].strip()
+            return add_meeting(description, date_time_str)
+        else:
+            return "Please provide a description and a datetime in the format 'YYYY-MM-DD HH:MM:SS'."
     else:
         return "Sorry, I didn't understand that command."
 
 def main():
     """Main function to run the assistant."""
-    speak("Allow me to introduce myself, I am FRIDAY. How can I assist you today?")
+    speak("Hello! I am FRIDAY, your personal assistant. How can I assist you today?")
     
+    def scheduler_thread():
+        while True:
+            scheduler.run(blocking=False)
+            time.sleep(1)
+    
+    # Start scheduler thread
+    threading.Thread(target=scheduler_thread, daemon=True).start()
+
     while True:
         command = listen_to_speech()
         if command.lower() in ["stop", "exit", "quit"]:
@@ -270,9 +361,7 @@ def main():
         speak(response)
 
 if __name__ == "__main__":
-    
     main()
-
 
 
 #Codded By Debjit, share with proper credit
