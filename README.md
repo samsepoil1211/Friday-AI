@@ -10,6 +10,8 @@ after running the above command run the final command to activate it <br>
 
 <b>Finally run the Friday.py file and enjoy your very own personal AI inspired from tony start.</b> <br>
 
+<hr>
+
 
 # Note
 <b>Use your own weatherAPI key, if you want to use the weather feature. Don't modify the code or elase it wont work. Share with proper credit.</b>
@@ -24,3 +26,5 @@ after running the above command run the final command to activate it <br>
 - time = to display the current time.<br>
 - introduce yourself = to display the introduction of the bot. <br>
 - weather (your city) = displays your current weather.
+
+<hr>
