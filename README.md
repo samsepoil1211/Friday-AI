@@ -28,3 +28,5 @@ after running the above command run the final command to activate it <br>
 - <b>weather (your city) = displays your current weather.</b>
 
 <hr>
+
+<b>More features commming soon, stay tuned</b>
