@@ -37,4 +37,4 @@ after running the above command run the final command to activate it <br>
 
 <hr>
 
-<b>More features commming soon, stay tuned</b>
+<b>A new verson of JARVIS has been made and will be uploaded here very soon...Stay tuned</b>
